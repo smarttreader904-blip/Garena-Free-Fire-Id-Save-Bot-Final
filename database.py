@@ -1,7 +1,7 @@
 # ==========================================
 # database.py
 # FF ID Management Bot Database
-# Part 1
+# Final Part 1
 # ==========================================
 
 import sqlite3
@@ -110,6 +110,7 @@ def total_users():
     cur = conn.cursor()
 
     cur.execute("SELECT COUNT(*) FROM users")
+
     count = cur.fetchone()[0]
 
     conn.close()
@@ -146,6 +147,7 @@ def get_all_ff_ids():
     cur = conn.cursor()
 
     cur.execute("SELECT * FROM ff_ids")
+
     data = cur.fetchall()
 
     conn.close()
@@ -157,6 +159,7 @@ def total_ff_ids():
     cur = conn.cursor()
 
     cur.execute("SELECT COUNT(*) FROM ff_ids")
+
     count = cur.fetchone()[0]
 
     conn.close()
@@ -176,7 +179,10 @@ def get_ff_by_uid(uid):
 
     conn.close()
     return data
-
+    # ==========================================
+# SEARCH / CATEGORY / RECENT
+# Final Part 2
+# ==========================================
 
 def search_nickname(name):
     conn = connect()
@@ -185,6 +191,36 @@ def search_nickname(name):
     cur.execute(
         "SELECT * FROM ff_ids WHERE nickname LIKE ?",
         (f"%{name}%",)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
+def get_by_category(category):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM ff_ids WHERE category=?",
+        (category,)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
+def recent_ids(limit=10):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM ff_ids ORDER BY id DESC LIMIT ?",
+        (limit,)
     )
 
     data = cur.fetchall()
@@ -217,7 +253,9 @@ def edit_ff_id(uid, new_name):
 
     conn.commit()
     conn.close()
-    # ==========================================
+
+
+# ==========================================
 # DUPLICATE CHECK
 # ==========================================
 
@@ -274,6 +312,7 @@ def get_pending_requests():
     cur = conn.cursor()
 
     cur.execute("SELECT * FROM pending")
+
     data = cur.fetchall()
 
     conn.close()
@@ -296,7 +335,9 @@ def clear_pending():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("DELETE FROM pending")
+    cur.execute(
+        "DELETE FROM pending"
+    )
 
     conn.commit()
     conn.close()
@@ -314,6 +355,7 @@ def approve_request(uid):
     data = cur.fetchone()
 
     if data:
+
         cur.execute("""
         INSERT INTO ff_ids
         (user_id, uid, nickname, category, status, created_at)
@@ -351,6 +393,7 @@ def reject_request(uid):
     conn.close()
     # ==========================================
 # VIEW COUNTER
+# Final Part 3
 # ==========================================
 
 def increase_view(uid):
@@ -380,7 +423,25 @@ def most_viewed():
     data = cur.fetchone()
 
     conn.close()
-    return data if data else None
+    return data
+
+
+def top_10_viewed():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT uid, nickname, views
+    FROM ff_ids
+    ORDER BY views DESC
+    LIMIT 10
+    """)
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
 
 # ==========================================
 # FAVORITES
@@ -424,23 +485,8 @@ def get_favorites():
 
     conn.close()
     return data
-    # ==========================================
-# CATEGORY FILTER
-# ==========================================
 
-def get_by_category(category):
-    conn = connect()
-    cur = conn.cursor()
 
-    cur.execute(
-        "SELECT * FROM ff_ids WHERE category=?",
-        (category,)
-    )
-
-    data = cur.fetchall()
-
-    conn.close()
-    return data
 # ==========================================
 # LOG SYSTEM
 # ==========================================
@@ -478,18 +524,6 @@ def get_logs():
     return data
 
 
-def clear_logs():
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute(
-        "DELETE FROM logs"
-    )
-
-    conn.commit()
-    conn.close()
-
-
 def get_logs_by_uid(uid):
     conn = connect()
     cur = conn.cursor()
@@ -517,6 +551,18 @@ def total_logs():
 
     conn.close()
     return count
+
+
+def clear_logs():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM logs"
+    )
+
+    conn.commit()
+    conn.close()
 
 
 # ==========================================
