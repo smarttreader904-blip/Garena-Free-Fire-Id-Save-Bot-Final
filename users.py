@@ -252,3 +252,62 @@ async def favorite_list(client, message):
         )
 
     await message.reply_text(text)
+
+
+# ==========================================
+# CATEGORY FILTER
+# ==========================================
+
+async def show_category(message, category):
+
+    data = db.get_by_category(category)
+
+    if not data:
+        return await message.reply_text(
+            f"❌ No {category} IDs Found"
+        )
+
+    text = f"🏆 {category} IDs\n\n"
+
+    for row in data[:50]:
+        text += (
+            f"🆔 {row[2]}\n"
+            f"👤 {row[3]}\n\n"
+        )
+
+    await message.reply_text(text)
+
+
+@Client.on_message(filters.command("bronze"))
+async def bronze_cmd(client, message):
+    await show_category(message, "Bronze")
+
+
+@Client.on_message(filters.command("silver"))
+async def silver_cmd(client, message):
+    await show_category(message, "Silver")
+
+
+@Client.on_message(filters.command("gold"))
+async def gold_cmd(client, message):
+    await show_category(message, "Gold")
+
+
+@Client.on_message(filters.command("platinum"))
+async def platinum_cmd(client, message):
+    await show_category(message, "Platinum")
+
+
+@Client.on_message(filters.command("diamond"))
+async def diamond_cmd(client, message):
+    await show_category(message, "Diamond")
+
+
+@Client.on_message(filters.command("heroic"))
+async def heroic_cmd(client, message):
+    await show_category(message, "Heroic")
+
+
+@Client.on_message(filters.command("grandmaster"))
+async def grandmaster_cmd(client, message):
+    await show_category(message, "Grandmaster")
