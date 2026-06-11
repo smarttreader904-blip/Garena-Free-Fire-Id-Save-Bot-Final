@@ -51,17 +51,16 @@ def create_tables():
     """)
 
     # Pending Requests
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS pending (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        uid TEXT,
-        nickname TEXT,
-        category TEXT,
-        created_at TEXT
-    )
-    """)
-
+cur.execute("""
+CREATE TABLE IF NOT EXISTS pending (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    uid TEXT UNIQUE,
+    nickname TEXT,
+    category TEXT,
+    created_at TEXT
+)
+""")
     # Logs
     cur.execute("""
     CREATE TABLE IF NOT EXISTS logs (
