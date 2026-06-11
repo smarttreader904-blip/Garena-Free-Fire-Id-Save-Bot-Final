@@ -8,8 +8,6 @@ from pyrogram.types import Message
 
 import database as db
 import keyboards
-from pyrogram import Client, filters
-from pyrogram.types import Message
 
 user_states = {}
 
@@ -32,7 +30,6 @@ async def start_cmd(client, message: Message):
         reply_markup=keyboards.home_menu()
     )
 
-
 # ==========================================
 # TOTAL IDS
 # ==========================================
@@ -46,7 +43,6 @@ async def total_ids(client, message):
         f"📊 Total Saved IDs: {total}"
     )
 
-
 # ==========================================
 # TOTAL USERS
 # ==========================================
@@ -59,7 +55,6 @@ async def total_users(client, message):
     await message.reply_text(
         f"👥 Total Users: {total}"
     )
-
 
 # ==========================================
 # SEARCH UID
@@ -95,10 +90,7 @@ async def search_uid(client, message):
 📅 Saved: {data[8]}
 """
 
-    await message.reply_text(
-        text
-    )
-
+    await message.reply_text(text)
 
 # ==========================================
 # SEARCH NAME
@@ -112,9 +104,7 @@ async def search_name(client, message):
             "Usage:\n/searchname NAME"
         )
 
-    name = " ".join(
-        message.command[1:]
-    )
+    name = " ".join(message.command[1:])
 
     results = db.search_nickname(name)
 
@@ -134,7 +124,6 @@ async def search_name(client, message):
         )
 
     await message.reply_text(text)
-
 
 # ==========================================
 # SHOW IDS
@@ -162,7 +151,6 @@ async def show_ids(client, message):
 
     await message.reply_text(text)
 
-
 # ==========================================
 # MOST VIEWED
 # ==========================================
@@ -181,8 +169,8 @@ async def top_viewed(client, message):
         f"🏆 Most Viewed UID\n\n"
         f"🆔 {data[0]}\n"
         f"👁 Views: {data[1]}"
-)
-# ==========================================
+    )
+    # ==========================================
 # ADD FAVORITE
 # ==========================================
 
@@ -232,7 +220,7 @@ async def remove_fav(client, message):
 
 
 # ==========================================
-# FAVORITE LIST
+# FAVORITES LIST
 # ==========================================
 
 @Client.on_message(filters.command("favorites"))
@@ -248,6 +236,7 @@ async def favorite_list(client, message):
     text = "📌 Favorite FF IDs\n\n"
 
     for row in data:
+
         text += (
             f"🆔 {row[2]}\n"
             f"👤 {row[3]}\n"
@@ -273,6 +262,7 @@ async def show_category(message, category):
     text = f"🏆 {category} IDs\n\n"
 
     for row in data[:50]:
+
         text += (
             f"🆔 {row[2]}\n"
             f"👤 {row[3]}\n\n"
@@ -314,6 +304,61 @@ async def heroic_cmd(client, message):
 @Client.on_message(filters.command("grandmaster"))
 async def grandmaster_cmd(client, message):
     await show_category(message, "Grandmaster")
+    # ==========================================
+# RECENT IDS
+# ==========================================
+
+@Client.on_message(filters.command("recent"))
+async def recent_cmd(client, message):
+
+    data = db.recent_ids()
+
+    if not data:
+        return await message.reply_text(
+            "❌ No IDs Found"
+        )
+
+    text = "🆕 Recently Added FF IDs\n\n"
+
+    for row in data:
+
+        text += (
+            f"🆔 {row[0]}\n"
+            f"👤 {row[1]}\n"
+            f"🏆 {row[2]}\n"
+            f"📅 {row[3]}\n\n"
+        )
+
+    await message.reply_text(text)
+
+
+# ==========================================
+# TOP 10 VIEWED
+# ==========================================
+
+@Client.on_message(filters.command("top10"))
+async def top10_viewed(client, message):
+
+    data = db.top_10_viewed()
+
+    if not data:
+        return await message.reply_text(
+            "❌ No Data Available"
+        )
+
+    text = "🏆 TOP 10 VIEWED FF IDs\n\n"
+
+    for i, row in enumerate(data, start=1):
+
+        text += (
+            f"{i}. 🆔 {row[0]}\n"
+            f"👤 {row[1]}\n"
+            f"👁 Views: {row[2]}\n\n"
+        )
+
+    await message.reply_text(text)
+
+
 # ==========================================
 # START ADD ID
 # ==========================================
@@ -328,15 +373,22 @@ async def addid_cmd(client, message):
     await message.reply_text(
         "🆔 Send FF UID"
     )
-    # ==========================================
+
+
+# ==========================================
 # MULTI STEP FORM
 # ==========================================
 
-@Client.on_message(filters.text & ~filters.command([
-    "start",
-    "search",
-    "showids"
-]))
+@Client.on_message(
+    filters.text &
+    ~filters.command([
+        "start",
+        "search",
+        "showids",
+        "recent",
+        "top10"
+    ])
+)
 async def add_form(client, message):
 
     user_id = message.from_user.id
@@ -346,19 +398,15 @@ async def add_form(client, message):
 
     state = user_states[user_id]
 
-    # STEP 1 UID
     if state["step"] == "uid":
 
-        uid = message.text.strip()
-
-        state["uid"] = uid
+        state["uid"] = message.text.strip()
         state["step"] = "nickname"
 
         return await message.reply_text(
             "👤 Send Nickname"
         )
 
-    # STEP 2 NICKNAME
     elif state["step"] == "nickname":
 
         state["nickname"] = message.text.strip()
@@ -368,7 +416,6 @@ async def add_form(client, message):
             "🏆 Send Category"
         )
 
-    # STEP 3 CATEGORY
     elif state["step"] == "category":
 
         uid = state["uid"]
@@ -389,4 +436,4 @@ async def add_form(client, message):
             f"UID: {uid}\n"
             f"Nickname: {nickname}\n"
             f"Category: {category}"
-                                  )
+    )
