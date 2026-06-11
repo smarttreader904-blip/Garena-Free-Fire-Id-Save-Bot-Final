@@ -137,14 +137,18 @@ def ff_actions(uid):
                 callback_data=f"fav_{uid}"
             ),
             InlineKeyboardButton(
-                "✏️ Edit",
-                callback_data=f"edit_{uid}"
+                "❌ Unfavorite",
+                callback_data=f"unfav_{uid}"
             )
         ],
         [
             InlineKeyboardButton(
+                "✏️ Edit",
+                callback_data=f"edit_{uid}"
+            ),
+            InlineKeyboardButton(
                 "🗑 Delete",
-                callback_data=f"delete_confirm_{uid}"
+                callback_data=f"delete_{uid}"
             )
         ]
     ])
