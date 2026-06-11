@@ -1,7 +1,7 @@
 # ==========================================
 # database.py
 # FF ID Management Bot Database
-# Part 1
+# FINAL VERSION - PART 1
 # ==========================================
 
 import sqlite3
@@ -50,7 +50,7 @@ def create_tables():
     )
     """)
 
-    # Pending
+    # Pending Requests
     cur.execute("""
     CREATE TABLE IF NOT EXISTS pending (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +86,7 @@ def add_user(user_id, name):
     cur = conn.cursor()
 
     cur.execute(
-        "INSERT OR IGNORE INTO users(user_id, name) VALUES (?, ?)",
+        "INSERT OR IGNORE INTO users(user_id,name) VALUES (?,?)",
         (user_id, name)
     )
 
@@ -99,6 +99,7 @@ def get_all_users():
     cur = conn.cursor()
 
     cur.execute("SELECT * FROM users")
+
     data = cur.fetchall()
 
     conn.close()
@@ -109,7 +110,10 @@ def total_users():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("SELECT COUNT(*) FROM users")
+    cur.execute(
+        "SELECT COUNT(*) FROM users"
+    )
+
     count = cur.fetchone()[0]
 
     conn.close()
@@ -145,7 +149,10 @@ def get_all_ff_ids():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM ff_ids")
+    cur.execute(
+        "SELECT * FROM ff_ids"
+    )
+
     data = cur.fetchall()
 
     conn.close()
@@ -156,7 +163,10 @@ def total_ff_ids():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("SELECT COUNT(*) FROM ff_ids")
+    cur.execute(
+        "SELECT COUNT(*) FROM ff_ids"
+    )
+
     count = cur.fetchone()[0]
 
     conn.close()
@@ -185,6 +195,21 @@ def search_nickname(name):
     cur.execute(
         "SELECT * FROM ff_ids WHERE nickname LIKE ?",
         (f"%{name}%",)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
+def get_by_category(category):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM ff_ids WHERE category=?",
+        (category,)
     )
 
     data = cur.fetchall()
@@ -273,7 +298,10 @@ def get_pending_requests():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM pending")
+    cur.execute(
+        "SELECT * FROM pending"
+    )
+
     data = cur.fetchall()
 
     conn.close()
@@ -296,7 +324,9 @@ def clear_pending():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("DELETE FROM pending")
+    cur.execute(
+        "DELETE FROM pending"
+    )
 
     conn.commit()
     conn.close()
@@ -349,6 +379,26 @@ def reject_request(uid):
 
     conn.commit()
     conn.close()
+
+
+# ==========================================
+# RECENT IDS
+# ==========================================
+
+def recent_ids(limit=10):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM ff_ids
+    ORDER BY id DESC
+    LIMIT ?
+    """, (limit,))
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
     # ==========================================
 # VIEW COUNTER
 # ==========================================
@@ -380,10 +430,28 @@ def most_viewed():
     data = cur.fetchone()
 
     conn.close()
-    return data if data else None
+    return data
+
+
+def top_10_viewed():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT uid, nickname, views
+    FROM ff_ids
+    ORDER BY views DESC
+    LIMIT 10
+    """)
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
 
 # ==========================================
-# FAVORITES
+# FAVORITE SYSTEM
 # ==========================================
 
 def add_favorite(uid):
@@ -424,23 +492,8 @@ def get_favorites():
 
     conn.close()
     return data
-    # ==========================================
-# CATEGORY FILTER
-# ==========================================
 
-def get_by_category(category):
-    conn = connect()
-    cur = conn.cursor()
 
-    cur.execute(
-        "SELECT * FROM ff_ids WHERE category=?",
-        (category,)
-    )
-
-    data = cur.fetchall()
-
-    conn.close()
-    return data
 # ==========================================
 # LOG SYSTEM
 # ==========================================
