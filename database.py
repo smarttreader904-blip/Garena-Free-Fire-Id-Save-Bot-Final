@@ -1,7 +1,7 @@
 # ==========================================
 # database.py
 # FF ID Management Bot Database
-# SQLite Version
+# Part 1
 # ==========================================
 
 import sqlite3
@@ -50,17 +50,18 @@ def create_tables():
     )
     """)
 
-    # Pending Requests
-cur.execute("""
-CREATE TABLE IF NOT EXISTS pending (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    uid TEXT UNIQUE,
-    nickname TEXT,
-    category TEXT,
-    created_at TEXT
-)
-""")
+    # Pending
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS pending (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        uid TEXT UNIQUE,
+        nickname TEXT,
+        category TEXT,
+        created_at TEXT
+    )
+    """)
+
     # Logs
     cur.execute("""
     CREATE TABLE IF NOT EXISTS logs (
@@ -85,7 +86,7 @@ def add_user(user_id, name):
     cur = conn.cursor()
 
     cur.execute(
-        "INSERT OR IGNORE INTO users(user_id,name) VALUES (?,?)",
+        "INSERT OR IGNORE INTO users(user_id, name) VALUES (?, ?)",
         (user_id, name)
     )
 
@@ -97,11 +98,11 @@ def get_all_users():
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("SELECT user_id FROM users")
-    users = [row[0] for row in cur.fetchall()]
+    cur.execute("SELECT * FROM users")
+    data = cur.fetchall()
 
     conn.close()
-    return users
+    return data
 
 
 def total_users():
@@ -177,6 +178,21 @@ def get_ff_by_uid(uid):
     return data
 
 
+def search_nickname(name):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM ff_ids WHERE nickname LIKE ?",
+        (f"%{name}%",)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
 def delete_ff_id(uid):
     conn = connect()
     cur = conn.cursor()
@@ -201,9 +217,7 @@ def edit_ff_id(uid, new_name):
 
     conn.commit()
     conn.close()
-
-
-# ==========================================
+    # ==========================================
 # DUPLICATE CHECK
 # ==========================================
 
@@ -216,10 +230,18 @@ def uid_exists(uid):
         (uid,)
     )
 
+    if cur.fetchone():
+        conn.close()
+        return True
+
+    cur.execute(
+        "SELECT uid FROM pending WHERE uid=?",
+        (uid,)
+    )
+
     data = cur.fetchone()
 
     conn.close()
-
     return data is not None
 
 
@@ -270,6 +292,16 @@ def get_pending_requests():
     return requests
 
 
+def clear_pending():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute("DELETE FROM pending")
+
+    conn.commit()
+    conn.close()
+
+
 def approve_request(uid):
     conn = connect()
     cur = conn.cursor()
@@ -317,9 +349,7 @@ def reject_request(uid):
 
     conn.commit()
     conn.close()
-
-
-# ==========================================
+    # ==========================================
 # VIEW COUNTER
 # ==========================================
 
@@ -368,6 +398,8 @@ def add_favorite(uid):
 
     conn.commit()
     conn.close()
+
+
 def remove_favorite(uid):
     conn = connect()
     cur = conn.cursor()
@@ -380,69 +412,29 @@ def remove_favorite(uid):
     conn.commit()
     conn.close()
 
+
 # ==========================================
-# GET LOGS
+# LOG SYSTEM
 # ==========================================
 
-def get_logs():
+def add_log(action, admin_id, uid):
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute(
-        "SELECT * FROM logs ORDER BY id DESC"
-    )
-
-    data = cur.fetchall()
-
-    conn.close()
-    return data
-def clear_logs():
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute("DELETE FROM logs")
+    cur.execute("""
+    INSERT INTO logs
+    (action, admin_id, uid, date)
+    VALUES (?, ?, ?, ?)
+    """, (
+        action,
+        admin_id,
+        uid,
+        datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+    ))
 
     conn.commit()
     conn.close()
 
-# ==========================================
-# CLEAR LOGS
-# ==========================================
-
-def clear_logs():
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute(
-        "DELETE FROM logs"
-    )
-
-    conn.commit()
-    conn.close()
-
-
-# ==========================================
-# GET LOGS BY UID
-# ==========================================
-
-def get_logs_by_uid(uid):
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute(
-        "SELECT * FROM logs WHERE uid=? ORDER BY id DESC",
-        (uid,)
-    )
-
-    data = cur.fetchall()
-
-    conn.close()
-    return data
-
-
-# ==========================================
-# GET LOGS
-# ==========================================
 
 def get_logs():
     conn = connect()
@@ -458,10 +450,6 @@ def get_logs():
     return data
 
 
-# ==========================================
-# CLEAR LOGS
-# ==========================================
-
 def clear_logs():
     conn = connect()
     cur = conn.cursor()
@@ -473,10 +461,6 @@ def clear_logs():
     conn.commit()
     conn.close()
 
-
-# ==========================================
-# GET LOGS BY UID
-# ==========================================
 
 def get_logs_by_uid(uid):
     conn = connect()
@@ -492,10 +476,6 @@ def get_logs_by_uid(uid):
     conn.close()
     return data
 
-
-# ==========================================
-# TOTAL LOGS
-# ==========================================
 
 def total_logs():
     conn = connect()
@@ -509,6 +489,8 @@ def total_logs():
 
     conn.close()
     return count
+
+
 # ==========================================
 # AUTO CREATE DATABASE
 # ==========================================
