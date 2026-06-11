@@ -1,13 +1,10 @@
 # ==========================================
-# stats.py
-# FF ID Management Bot Statistics System
+# utils.py
+# FF ID Management Bot Utilities
 # ==========================================
 
-from pyrogram import Client, filters
-from pyrogram.types import Message
-
+from datetime import datetime
 import config
-import database as db
 
 
 # ==========================================
@@ -19,135 +16,124 @@ def is_admin(user_id):
 
 
 # ==========================================
-# BOT STATS
-# /stats
+# CURRENT TIME
 # ==========================================
 
-@Client.on_message(filters.command("stats"))
-async def bot_stats(client, message: Message):
-
-    total_ids = db.total_ff_ids()
-    total_users = db.total_users()
-
-    pending_count = len(
-        db.get_pending_requests()
-    )
-
-    most_viewed = db.most_viewed()
-
-    text = (
-        "📊 FF ID BOT STATS\n\n"
-        f"🆔 Total IDs: {total_ids}\n"
-        f"👥 Total Users: {total_users}\n"
-        f"📥 Pending Requests: {pending_count}\n"
-    )
-
-    if most_viewed:
-        text += (
-            f"\n🏆 Most Viewed UID: {most_viewed[0]}\n"
-            f"👁 Views: {most_viewed[1]}"
-        )
-
-    await message.reply_text(text)
-
-
-# ==========================================
-# ADMIN STATS
-# /adminstats
-# ==========================================
-
-@Client.on_message(filters.command("adminstats"))
-async def admin_stats(client, message):
-
-    if not is_admin(message.from_user.id):
-        return await message.reply_text(
-            "🚫 Not Allowed"
-        )
-
-    total_ids = db.total_ff_ids()
-    total_users = db.total_users()
-    total_logs = db.total_logs()
-
-    pending_count = len(
-        db.get_pending_requests()
-    )
-
-    text = f"""
-👑 ADMIN STATS
-
-🆔 Total IDs: {total_ids}
-👥 Total Users: {total_users}
-📥 Pending: {pending_count}
-📜 Total Logs: {total_logs}
-"""
-
-    await message.reply_text(text)
-
-
-# ==========================================
-# TOTAL IDS
-# /ids
-# ==========================================
-
-@Client.on_message(filters.command("ids"))
-async def ids_count(client, message):
-
-    count = db.total_ff_ids()
-
-    await message.reply_text(
-        f"🆔 Total Saved IDs: {count}"
+def get_time():
+    return datetime.now().strftime(
+        "%d-%m-%Y %H:%M:%S"
     )
 
 
 # ==========================================
-# TOTAL USERS
-# /users
+# FORMAT FF DETAILS
 # ==========================================
 
-@Client.on_message(filters.command("users"))
-async def users_count(client, message):
-
-    count = db.total_users()
-
-    await message.reply_text(
-        f"👥 Total Users: {count}"
-    )
-
-
-# ==========================================
-# TOP UID
-# /topuid
-# ==========================================
-
-@Client.on_message(filters.command("topuid"))
-async def top_uid(client, message):
-
-    data = db.most_viewed()
+def format_ff(data):
 
     if not data:
-        return await message.reply_text(
-            "❌ No Data Available"
-        )
+        return "❌ No Data Found"
 
-    await message.reply_text(
-        f"🏆 Most Viewed UID\n\n"
-        f"🆔 UID: {data[0]}\n"
-        f"👁 Views: {data[1]}"
+    return f"""
+🎮 FF ID Details
+
+🆔 UID: {data[2]}
+👤 Nickname: {data[3]}
+🏆 Category: {data[4]}
+📊 Status: {data[5]}
+👁 Views: {data[6]}
+⭐ Favorite: {data[7]}
+📅 Saved: {data[8]}
+"""
+
+
+# ==========================================
+# SUCCESS MESSAGE
+# ==========================================
+
+def success(text):
+    return f"✅ {text}"
+
+
+# ==========================================
+# ERROR MESSAGE
+# ==========================================
+
+def error(text):
+    return f"❌ {text}"
+
+
+# ==========================================
+# NOT ALLOWED
+# ==========================================
+
+def not_allowed():
+    return "🚫 Not Allowed"
+
+
+# ==========================================
+# DUPLICATE UID
+# ==========================================
+
+def duplicate_uid():
+    return "⚠️ UID Already Exists"
+
+
+# ==========================================
+# PENDING MESSAGE
+# ==========================================
+
+def pending_message(uid):
+    return (
+        f"📥 Request Submitted\n\n"
+        f"UID: {uid}\n"
+        f"Status: Pending Approval"
     )
 
 
 # ==========================================
-# PENDING COUNT
-# /pendingstats
+# APPROVED MESSAGE
 # ==========================================
 
-@Client.on_message(filters.command("pendingstats"))
-async def pending_stats(client, message):
-
-    count = len(
-        db.get_pending_requests()
+def approved_message(uid):
+    return (
+        f"✅ FF ID Approved\n\n"
+        f"UID: {uid}"
     )
 
-    await message.reply_text(
-        f"📥 Pending Requests: {count}"
+
+# ==========================================
+# REJECTED MESSAGE
+# ==========================================
+
+def rejected_message(uid):
+    return (
+        f"❌ FF ID Rejected\n\n"
+        f"UID: {uid}"
     )
+
+
+# ==========================================
+# BROADCAST FORMAT
+# ==========================================
+
+def broadcast_message(text):
+    return (
+        "📢 Broadcast Message\n\n"
+        f"{text}"
+    )
+
+
+# ==========================================
+# CATEGORY LIST
+# ==========================================
+
+CATEGORIES = [
+    "Bronze",
+    "Silver",
+    "Gold",
+    "Platinum",
+    "Diamond",
+    "Heroic",
+    "Grandmaster"
+    ]
