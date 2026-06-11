@@ -1,46 +1,45 @@
 # ==========================================
 # bot.py
-# FF ID Management Bot (Main File)
+# FF ID Management Bot Main File
 # ==========================================
 
 from pyrogram import Client
 import config
 
-# Import handlers
-import admin
+# Import Handlers
 import users
+import admin
 import pending
-import keyboards
-import stats
 import logs
+import stats
+import keyboards
+import utils
+import database
+
 
 # ==========================================
-# BOT START
+# START BOT
 # ==========================================
 
 app = Client(
     "ff_id_bot",
-    bot_token=config.BOT_TOKEN,
-    api_id=config.API_ID,
-    api_hash=config.API_HASH
+    bot_token=config.BOT_TOKEN
 )
 
+
 # ==========================================
-# STARTUP MESSAGE
+# BOT START MESSAGE
 # ==========================================
 
 @app.on_message()
-def auto_save_users(client, message):
-    try:
-        import database as db
+async def auto_register(client, message):
 
-        if message.from_user:
-            db.add_user(
-                message.from_user.id,
-                message.from_user.first_name
-            )
-    except:
-        pass
+    if message.from_user:
+
+        database.add_user(
+            message.from_user.id,
+            message.from_user.first_name
+        )
 
 
 # ==========================================
@@ -48,8 +47,9 @@ def auto_save_users(client, message):
 # ==========================================
 
 if __name__ == "__main__":
-    print("=" * 50)
-    print("🚀 FF ID Management Bot Started")
-    print("=" * 50)
+
+    print("=" * 40)
+    print("✅ FF ID BOT STARTED")
+    print("=" * 40)
 
     app.run()
