@@ -151,3 +151,29 @@ async def pending_stats(client, message):
     await message.reply_text(
         f"📥 Pending Requests: {count}"
     )
+# ==========================================
+# TOP 10 VIEWED IDS
+# /top10
+# ==========================================
+
+@Client.on_message(filters.command("top10"))
+async def top10_viewed(client, message):
+
+    data = db.top_10_viewed()
+
+    if not data:
+        return await message.reply_text(
+            "❌ No Data Available"
+        )
+
+    text = "🏆 TOP 10 VIEWED FF IDs\n\n"
+
+    for i, row in enumerate(data, start=1):
+
+        text += (
+            f"{i}. 🆔 {row[0]}\n"
+            f"👤 {row[1]}\n"
+            f"👁 Views: {row[2]}\n\n"
+        )
+
+    await message.reply_text(text)
