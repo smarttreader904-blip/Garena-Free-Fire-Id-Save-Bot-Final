@@ -8,8 +8,9 @@ from pyrogram.types import (
     InlineKeyboardButton
 )
 
+
 # ==========================================
-# 🏠 HOME MENU
+# HOME MENU
 # ==========================================
 
 def home_menu():
@@ -24,9 +25,7 @@ def home_menu():
             InlineKeyboardButton(
                 "📋 Show IDs",
                 callback_data="show_ids"
-            )
-        ],
-        [
+            ),
             InlineKeyboardButton(
                 "🔍 Search UID",
                 callback_data="search_uid"
@@ -36,46 +35,48 @@ def home_menu():
             InlineKeyboardButton(
                 "⭐ Favorites",
                 callback_data="favorites"
+            ),
+            InlineKeyboardButton(
+                "📊 Stats",
+                callback_data="stats"
             )
         ],
         [
             InlineKeyboardButton(
-                "♻️ Refresh",
-                callback_data="refresh"
+                "📥 Pending",
+                callback_data="pending"
             )
         ]
     ])
 
 
 # ==========================================
-# 👑 ADMIN PANEL
+# ADMIN PANEL
 # ==========================================
 
 def admin_panel():
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "📥 Pending",
+                "📥 Pending Requests",
                 callback_data="pending_list"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "📊 Stats",
-                callback_data="stats"
-            ),
-            InlineKeyboardButton(
-                "📜 Logs",
-                callback_data="logs"
             )
         ],
         [
             InlineKeyboardButton(
                 "📢 Broadcast",
                 callback_data="broadcast"
+            ),
+            InlineKeyboardButton(
+                "📊 Stats",
+                callback_data="admin_stats"
             )
         ],
         [
+            InlineKeyboardButton(
+                "📜 Logs",
+                callback_data="logs"
+            ),
             InlineKeyboardButton(
                 "📤 Export",
                 callback_data="export"
@@ -85,26 +86,26 @@ def admin_panel():
 
 
 # ==========================================
-# ✅ APPROVE / REJECT
+# APPROVE / REJECT
 # ==========================================
 
-def approval_buttons(uid):
+def approve_reject(uid):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
                 "✅ Approve",
-                callback_data=f"approve:{uid}"
+                callback_data=f"approve_{uid}"
             ),
             InlineKeyboardButton(
                 "❌ Reject",
-                callback_data=f"reject:{uid}"
+                callback_data=f"reject_{uid}"
             )
         ]
     ])
 
 
 # ==========================================
-# 🗑 DELETE CONFIRMATION
+# DELETE CONFIRM
 # ==========================================
 
 def delete_confirm(uid):
@@ -112,157 +113,50 @@ def delete_confirm(uid):
         [
             InlineKeyboardButton(
                 "🗑 Confirm Delete",
-                callback_data=f"delete:{uid}"
+                callback_data=f"delete_{uid}"
             )
         ],
         [
             InlineKeyboardButton(
                 "❌ Cancel",
-                callback_data="cancel"
+                callback_data="cancel_delete"
             )
         ]
     ])
 
 
 # ==========================================
-# ✏️ EDIT BUTTON
+# FF ID ACTIONS
 # ==========================================
 
-def edit_button(uid):
+def ff_actions(uid):
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton(
-                "✏️ Edit",
-                callback_data=f"edit:{uid}"
-            )
-        ]
-    ])
-
-
-# ==========================================
-# ⭐ FAVORITE BUTTON
-# ==========================================
-
-def favorite_button(uid):
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "⭐ Add Favorite",
-                callback_data=f"favorite:{uid}"
-            )
-        ]
-    ])
-
-
-# ==========================================
-# 📤 EXPORT MENU
-# ==========================================
-
-def export_menu():
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "📄 Export TXT",
-                callback_data="export_txt"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "📊 Export CSV",
-                callback_data="export_csv"
-            )
-        ]
-    ])
-
-
-# ==========================================
-# 🗂 CATEGORY MENU
-# ==========================================
-
-def category_menu():
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "🔥 Heroic",
-                callback_data="cat_Heroic"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "👑 Grandmaster",
-                callback_data="cat_Grandmaster"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "💎 Diamond",
-                callback_data="cat_Diamond"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "🏆 Platinum",
-                callback_data="cat_Platinum"
-            )
-        ]
-    ])
-
-
-# ==========================================
-# 📋 SHOW IDS BUTTONS
-# ==========================================
-
-def ff_id_button(uid):
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                f"🎮 UID: {uid}",
-                callback_data=f"view:{uid}"
-            )
-        ]
-    ])
-
-
-# ==========================================
-# 👀 VIEW DETAILS MENU
-# ==========================================
-
-def details_menu(uid):
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "👀 View",
-                callback_data=f"view:{uid}"
-            ),
             InlineKeyboardButton(
                 "⭐ Favorite",
-                callback_data=f"favorite:{uid}"
+                callback_data=f"fav_{uid}"
+            ),
+            InlineKeyboardButton(
+                "✏️ Edit",
+                callback_data=f"edit_{uid}"
             )
         ],
         [
             InlineKeyboardButton(
-                "✏️ Edit",
-                callback_data=f"edit:{uid}"
-            ),
-            InlineKeyboardButton(
                 "🗑 Delete",
-                callback_data=f"delete_confirm:{uid}"
+                callback_data=f"delete_confirm_{uid}"
             )
         ]
     ])
 
 
 # ==========================================
-# 🏠 HOME + REFRESH
+# REFRESH BUTTON
 # ==========================================
 
-def navigation_menu():
+def refresh_button():
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton(
-                "🏠 Home",
-                callback_data="home"
-            ),
             InlineKeyboardButton(
                 "♻️ Refresh",
                 callback_data="refresh"
@@ -272,15 +166,63 @@ def navigation_menu():
 
 
 # ==========================================
-# 🚫 NOT ALLOWED
+# BACK HOME
 # ==========================================
 
-def not_allowed():
+def back_home():
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton(
-                "❌ Not Allowed",
-                callback_data="not_allowed"
+                "🏠 Home",
+                callback_data="home"
+            )
+        ]
+    ])
+
+
+# ==========================================
+# EXPORT MENU
+# ==========================================
+
+def export_menu():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "📄 Export TXT",
+                callback_data="export_txt"
+            ),
+            InlineKeyboardButton(
+                "📊 Export CSV",
+                callback_data="export_csv"
+            )
+        ]
+    ])
+
+
+# ==========================================
+# CATEGORY MENU
+# ==========================================
+
+def category_menu():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                "🔥 Heroic",
+                callback_data="cat_heroic"
+            ),
+            InlineKeyboardButton(
+                "👑 Grandmaster",
+                callback_data="cat_grandmaster"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "💎 Diamond",
+                callback_data="cat_diamond"
+            ),
+            InlineKeyboardButton(
+                "🥈 Platinum",
+                callback_data="cat_platinum"
             )
         ]
     ])
