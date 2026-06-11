@@ -4,12 +4,14 @@
 # ==========================================
 
 from pyrogram import Client, filters
+from pyrogram.types import Message
+
 import config
 import database as db
 
 
 # ==========================================
-# 👑 ADMIN CHECK
+# CHECK ADMIN
 # ==========================================
 
 def is_admin(user_id):
@@ -17,139 +19,135 @@ def is_admin(user_id):
 
 
 # ==========================================
-# 📊 BOT STATS
+# BOT STATS
+# /stats
 # ==========================================
 
 @Client.on_message(filters.command("stats"))
-def stats_command(client, message):
+async def bot_stats(client, message: Message):
+
+    total_ids = db.total_ff_ids()
+    total_users = db.total_users()
+
+    pending_count = len(
+        db.get_pending_requests()
+    )
+
+    most_viewed = db.most_viewed()
+
+    text = (
+        "📊 FF ID BOT STATS\n\n"
+        f"🆔 Total IDs: {total_ids}\n"
+        f"👥 Total Users: {total_users}\n"
+        f"📥 Pending Requests: {pending_count}\n"
+    )
+
+    if most_viewed:
+        text += (
+            f"\n🏆 Most Viewed UID: {most_viewed[0]}\n"
+            f"👁 Views: {most_viewed[1]}"
+        )
+
+    await message.reply_text(text)
+
+
+# ==========================================
+# ADMIN STATS
+# /adminstats
+# ==========================================
+
+@Client.on_message(filters.command("adminstats"))
+async def admin_stats(client, message):
 
     if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
+        return await message.reply_text(
+            "🚫 Not Allowed"
+        )
 
-    total_users = db.total_users()
     total_ids = db.total_ff_ids()
+    total_users = db.total_users()
+    total_logs = db.total_logs()
 
-    try:
-        top = db.most_viewed()
+    pending_count = len(
+        db.get_pending_requests()
+    )
 
-        if top:
-            top_uid = top[0]
-            top_views = top[1]
-        else:
-            top_uid = "None"
-            top_views = 0
+    text = f"""
+👑 ADMIN STATS
 
-    except:
-        top_uid = "None"
-        top_views = 0
+🆔 Total IDs: {total_ids}
+👥 Total Users: {total_users}
+📥 Pending: {pending_count}
+📜 Total Logs: {total_logs}
+"""
 
-    pending_count = len(db.get_pending_requests())
+    await message.reply_text(text)
 
-    message.reply(
-        f"📊 FF ID BOT STATS\n\n"
-        f"👥 Total Users: {total_users}\n"
-        f"🎮 Total FF IDs: {total_ids}\n"
-        f"📥 Pending Requests: {pending_count}\n"
-        f"📈 Most Viewed UID: {top_uid}\n"
-        f"👀 Views: {top_views}"
+
+# ==========================================
+# TOTAL IDS
+# /ids
+# ==========================================
+
+@Client.on_message(filters.command("ids"))
+async def ids_count(client, message):
+
+    count = db.total_ff_ids()
+
+    await message.reply_text(
+        f"🆔 Total Saved IDs: {count}"
     )
 
 
 # ==========================================
-# 👥 TOTAL USERS
+# TOTAL USERS
+# /users
 # ==========================================
 
 @Client.on_message(filters.command("users"))
-def users_count(client, message):
+async def users_count(client, message):
 
-    if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
+    count = db.total_users()
 
-    message.reply(
-        f"👥 Total Users: {db.total_users()}"
+    await message.reply_text(
+        f"👥 Total Users: {count}"
     )
 
 
 # ==========================================
-# 🎮 TOTAL FF IDS
-# ==========================================
-
-@Client.on_message(filters.command("ffids"))
-def ffids_count(client, message):
-
-    if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
-
-    message.reply(
-        f"🎮 Total FF IDs: {db.total_ff_ids()}"
-    )
-
-
-# ==========================================
-# 📈 MOST VIEWED UID
+# TOP UID
+# /topuid
 # ==========================================
 
 @Client.on_message(filters.command("topuid"))
-def top_uid(client, message):
-
-    if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
+async def top_uid(client, message):
 
     data = db.most_viewed()
 
     if not data:
-        return message.reply(
-            "📭 No Viewed UID Found"
+        return await message.reply_text(
+            "❌ No Data Available"
         )
 
-    message.reply(
+    await message.reply_text(
         f"🏆 Most Viewed UID\n\n"
         f"🆔 UID: {data[0]}\n"
-        f"👀 Views: {data[1]}"
+        f"👁 Views: {data[1]}"
     )
 
 
 # ==========================================
-# 📥 PENDING COUNT
+# PENDING COUNT
+# /pendingstats
 # ==========================================
 
 @Client.on_message(filters.command("pendingstats"))
-def pending_stats(client, message):
+async def pending_stats(client, message):
 
-    if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
-
-    pending = len(db.get_pending_requests())
-
-    message.reply(
-        f"📥 Pending Requests: {pending}"
+    count = len(
+        db.get_pending_requests()
     )
 
-
-# ==========================================
-# ⭐ FAVORITE COUNT
-# ==========================================
-
-@Client.on_message(filters.command("favoritescount"))
-def favorites_count(client, message):
-
-    if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
-
-    try:
-        data = db.get_all_ff_ids()
-
-        count = 0
-
-        for row in data:
-            if row[7] == 1:
-                count += 1
-
-        message.reply(
-            f"⭐ Total Favorites: {count}"
-        )
-
-    except:
-        message.reply(
-            "⭐ Total Favorites: 0"
-      )
+    await message.reply_text(
+        f"📥 Pending Requests: {count}"
+    )
