@@ -396,7 +396,14 @@ def get_logs():
 
     conn.close()
     return data
+def clear_logs():
+    conn = connect()
+    cur = conn.cursor()
 
+    cur.execute("DELETE FROM logs")
+
+    conn.commit()
+    conn.close()
 
 # ==========================================
 # CLEAR LOGS
