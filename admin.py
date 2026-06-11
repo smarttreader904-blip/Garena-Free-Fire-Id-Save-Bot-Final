@@ -5,6 +5,7 @@
 
 from pyrogram import Client, filters
 from pyrogram.types import Message
+import csv
 
 import config
 import database as db
@@ -229,5 +230,48 @@ async def export_txt(client, message):
         f.write(text)
 
     await message.reply_document(
-        "ff_ids.txt"
+    "ff_ids.txt"
+)
+
+# ==========================================
+# EXPORT CSV
+# ==========================================
+
+@Client.on_message(filters.command("exportcsv"))
+async def export_csv(client, message):
+
+    if not is_admin(message.from_user.id):
+        return await message.reply_text(
+            "🚫 Not Allowed"
+        )
+
+    data = db.get_all_ff_ids()
+
+    with open(
+        "ff_ids.csv",
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as file:
+
+        writer = csv.writer(file)
+
+        writer.writerow([
+            "ID",
+            "USER_ID",
+            "UID",
+            "NICKNAME",
+            "CATEGORY",
+            "STATUS",
+            "VIEWS",
+            "FAVORITE",
+            "CREATED_AT"
+        ])
+
+        for row in data:
+            writer.writerow(row)
+
+    await message.reply_document(
+        "ff_ids.csv",
+        caption="📊 FF IDs CSV Export"
     )
