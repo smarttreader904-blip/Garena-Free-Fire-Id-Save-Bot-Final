@@ -4,10 +4,11 @@
 # ==========================================
 
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, CallbackQuery
 
 import config
 import database as db
+import keyboards
 
 
 # ==========================================
@@ -41,14 +42,19 @@ async def pending_list(client, message: Message):
 
     for req in requests:
 
-        text += (
-            f"🆔 UID: {req['uid']}\n"
-            f"👤 Name: {req['nickname']}\n"
-            f"🏆 Category: {req['category']}\n"
-            f"👤 User ID: {req['user_id']}\n\n"
-        )
+    text = (
+        f"🆔 UID: {req['uid']}\n"
+        f"👤 Name: {req['nickname']}\n"
+        f"🏆 Category: {req['category']}\n"
+        f"👤 User ID: {req['user_id']}"
+    )
 
-    await message.reply_text(text)
+    await message.reply_text(
+        text,
+        reply_markup=keyboards.approve_reject(
+            req["uid"]
+        )
+    )
 
 
 # ==========================================
@@ -183,5 +189,65 @@ async def pending_count(client, message):
     )
 
     await message.reply_text(
-        f"📥 Total Pending: {count}"
+    f"📥 Total Pending: {count}"
+)
+
+# ==========================================
+# INLINE APPROVE / REJECT
+# ==========================================
+
+@Client.on_callback_query()
+async def approve_reject_callback(client, callback: CallbackQuery):
+
+    if callback.from_user.id not in config.ADMIN_IDS:
+        return await callback.answer(
+            "Not Admin",
+            show_alert=True
+        )
+
+    data = callback.data
+
+    if data.startswith("approve_"):
+
+        uid = data.replace("approve_", "")
+
+        result = db.approve_request(uid)
+
+        if not result:
+            return await callback.answer(
+                "UID Not Found"
+            )
+
+        db.add_log(
+            "APPROVE",
+            callback.from_user.id,
+            uid
+        )
+
+        await callback.message.edit_text(
+            f"✅ Approved\n\nUID: {uid}"
+        )
+
+        return await callback.answer(
+            "Approved"
+        )
+
+    elif data.startswith("reject_"):
+
+        uid = data.replace("reject_", "")
+
+        db.reject_request(uid)
+
+        db.add_log(
+            "REJECT",
+            callback.from_user.id,
+            uid
+        )
+
+        await callback.message.edit_text(
+            f"❌ Rejected\n\nUID: {uid}"
+        )
+
+        return await callback.answer(
+            "Rejected"
         )
