@@ -177,3 +177,30 @@ async def top10_viewed(client, message):
         )
 
     await message.reply_text(text)
+    # ==========================================
+# RECENT IDS
+# /recent
+# ==========================================
+
+@Client.on_message(filters.command("recent"))
+async def recent_cmd(client, message):
+
+    data = db.recent_ids()
+
+    if not data:
+        return await message.reply_text(
+            "❌ No IDs Found"
+        )
+
+    text = "🆕 Recently Added FF IDs\n\n"
+
+    for row in data:
+
+        text += (
+            f"🆔 {row[0]}\n"
+            f"👤 {row[1]}\n"
+            f"🏆 {row[2]}\n"
+            f"📅 {row[3]}\n\n"
+        )
+
+    await message.reply_text(text)
