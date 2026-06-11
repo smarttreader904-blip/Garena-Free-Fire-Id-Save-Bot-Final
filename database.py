@@ -350,7 +350,7 @@ def most_viewed():
     data = cur.fetchone()
 
     conn.close()
-    return data
+    return data if data else None
 
 
 # ==========================================
@@ -368,31 +368,140 @@ def add_favorite(uid):
 
     conn.commit()
     conn.close()
-
-
-# ==========================================
-# LOG SYSTEM
-# ==========================================
-
-def add_log(action, admin_id, uid):
+def remove_favorite(uid):
     conn = connect()
     cur = conn.cursor()
 
-    cur.execute("""
-    INSERT INTO logs
-    (action, admin_id, uid, date)
-    VALUES (?, ?, ?, ?)
-    """, (
-        action,
-        admin_id,
-        uid,
-        datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-    ))
+    cur.execute(
+        "UPDATE ff_ids SET favorite=0 WHERE uid=?",
+        (uid,)
+    )
+
+    conn.commit()
+    conn.close()
+
+# ==========================================
+# GET LOGS
+# ==========================================
+
+def get_logs():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM logs ORDER BY id DESC"
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
+# ==========================================
+# CLEAR LOGS
+# ==========================================
+
+def clear_logs():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM logs"
+    )
 
     conn.commit()
     conn.close()
 
 
+# ==========================================
+# GET LOGS BY UID
+# ==========================================
+
+def get_logs_by_uid(uid):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM logs WHERE uid=? ORDER BY id DESC",
+        (uid,)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
+# ==========================================
+# GET LOGS
+# ==========================================
+
+def get_logs():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM logs ORDER BY id DESC"
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
+# ==========================================
+# CLEAR LOGS
+# ==========================================
+
+def clear_logs():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM logs"
+    )
+
+    conn.commit()
+    conn.close()
+
+
+# ==========================================
+# GET LOGS BY UID
+# ==========================================
+
+def get_logs_by_uid(uid):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM logs WHERE uid=? ORDER BY id DESC",
+        (uid,)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
+
+
+# ==========================================
+# TOTAL LOGS
+# ==========================================
+
+def total_logs():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT COUNT(*) FROM logs"
+    )
+
+    count = cur.fetchone()[0]
+
+    conn.close()
+    return count
 # ==========================================
 # AUTO CREATE DATABASE
 # ==========================================
