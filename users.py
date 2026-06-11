@@ -8,7 +8,10 @@ from pyrogram.types import Message
 
 import database as db
 import keyboards
+from pyrogram import Client, filters
+from pyrogram.types import Message
 
+user_states = {}
 
 # ==========================================
 # START
@@ -311,3 +314,79 @@ async def heroic_cmd(client, message):
 @Client.on_message(filters.command("grandmaster"))
 async def grandmaster_cmd(client, message):
     await show_category(message, "Grandmaster")
+# ==========================================
+# START ADD ID
+# ==========================================
+
+@Client.on_message(filters.command("addid"))
+async def addid_cmd(client, message):
+
+    user_states[message.from_user.id] = {
+        "step": "uid"
+    }
+
+    await message.reply_text(
+        "🆔 Send FF UID"
+    )
+    # ==========================================
+# MULTI STEP FORM
+# ==========================================
+
+@Client.on_message(filters.text & ~filters.command([
+    "start",
+    "search",
+    "showids"
+]))
+async def add_form(client, message):
+
+    user_id = message.from_user.id
+
+    if user_id not in user_states:
+        return
+
+    state = user_states[user_id]
+
+    # STEP 1 UID
+    if state["step"] == "uid":
+
+        uid = message.text.strip()
+
+        state["uid"] = uid
+        state["step"] = "nickname"
+
+        return await message.reply_text(
+            "👤 Send Nickname"
+        )
+
+    # STEP 2 NICKNAME
+    elif state["step"] == "nickname":
+
+        state["nickname"] = message.text.strip()
+        state["step"] = "category"
+
+        return await message.reply_text(
+            "🏆 Send Category"
+        )
+
+    # STEP 3 CATEGORY
+    elif state["step"] == "category":
+
+        uid = state["uid"]
+        nickname = state["nickname"]
+        category = message.text.strip()
+
+        db.add_pending_request(
+            user_id,
+            uid,
+            nickname,
+            category
+        )
+
+        del user_states[user_id]
+
+        await message.reply_text(
+            f"📥 Request Submitted\n\n"
+            f"UID: {uid}\n"
+            f"Nickname: {nickname}\n"
+            f"Category: {category}"
+                                  )
