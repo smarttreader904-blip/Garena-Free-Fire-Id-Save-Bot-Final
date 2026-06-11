@@ -179,3 +179,76 @@ async def top_viewed(client, message):
         f"🆔 {data[0]}\n"
         f"👁 Views: {data[1]}"
 )
+# ==========================================
+# ADD FAVORITE
+# ==========================================
+
+@Client.on_message(filters.command("fav"))
+async def add_fav(client, message):
+
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "Usage:\n/fav UID"
+        )
+
+    uid = message.command[1]
+
+    data = db.get_ff_by_uid(uid)
+
+    if not data:
+        return await message.reply_text(
+            "❌ UID Not Found"
+        )
+
+    db.add_favorite(uid)
+
+    await message.reply_text(
+        f"⭐ Added To Favorites\n\nUID: {uid}"
+    )
+
+
+# ==========================================
+# REMOVE FAVORITE
+# ==========================================
+
+@Client.on_message(filters.command("unfav"))
+async def remove_fav(client, message):
+
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "Usage:\n/unfav UID"
+        )
+
+    uid = message.command[1]
+
+    db.remove_favorite(uid)
+
+    await message.reply_text(
+        f"❌ Removed From Favorites\n\nUID: {uid}"
+    )
+
+
+# ==========================================
+# FAVORITE LIST
+# ==========================================
+
+@Client.on_message(filters.command("favorites"))
+async def favorite_list(client, message):
+
+    data = db.get_favorites()
+
+    if not data:
+        return await message.reply_text(
+            "📌 No Favorites Found"
+        )
+
+    text = "📌 Favorite FF IDs\n\n"
+
+    for row in data:
+        text += (
+            f"🆔 {row[2]}\n"
+            f"👤 {row[3]}\n"
+            f"🏆 {row[4]}\n\n"
+        )
+
+    await message.reply_text(text)
