@@ -4,209 +4,136 @@
 # ==========================================
 
 from datetime import datetime
-import csv
 import config
 
 
 # ==========================================
-# 📅 CURRENT DATE TIME
+# CHECK ADMIN
 # ==========================================
 
-def current_datetime():
+def is_admin(user_id):
+    return user_id in config.ADMIN_IDS
+
+
+# ==========================================
+# CURRENT TIME
+# ==========================================
+
+def get_time():
     return datetime.now().strftime(
-        f"{config.DATE_FORMAT} {config.TIME_FORMAT}"
+        "%d-%m-%Y %H:%M:%S"
     )
 
 
 # ==========================================
-# 📅 CURRENT DATE
+# FORMAT FF DETAILS
 # ==========================================
 
-def current_date():
-    return datetime.now().strftime(
-        config.DATE_FORMAT
-    )
+def format_ff(data):
 
+    if not data:
+        return "❌ No Data Found"
 
-# ==========================================
-# 🕒 CURRENT TIME
-# ==========================================
+    return f"""
+🎮 FF ID Details
 
-def current_time():
-    return datetime.now().strftime(
-        config.TIME_FORMAT
-    )
-
-
-# ==========================================
-# 🔍 VALID UID CHECK
-# ==========================================
-
-def valid_uid(uid):
-
-    if not uid.isdigit():
-        return False
-
-    if len(uid) < 6:
-        return False
-
-    return True
+🆔 UID: {data[2]}
+👤 Nickname: {data[3]}
+🏆 Category: {data[4]}
+📊 Status: {data[5]}
+👁 Views: {data[6]}
+⭐ Favorite: {data[7]}
+📅 Saved: {data[8]}
+"""
 
 
 # ==========================================
-# 👤 VALID NAME CHECK
+# SUCCESS MESSAGE
 # ==========================================
 
-def valid_name(name):
-
-    if len(name.strip()) < 2:
-        return False
-
-    return True
+def success(text):
+    return f"✅ {text}"
 
 
 # ==========================================
-# 🗂 VALID CATEGORY
+# ERROR MESSAGE
 # ==========================================
 
-def valid_category(category):
-
-    return category in config.CATEGORIES
-
-
-# ==========================================
-# ⭐ STATUS FORMAT
-# ==========================================
-
-def status_text(status):
-
-    if status == "approved":
-        return "✅ Approved"
-
-    elif status == "rejected":
-        return "❌ Rejected"
-
-    elif status == "pending":
-        return "📥 Pending"
-
-    return "Unknown"
+def error(text):
+    return f"❌ {text}"
 
 
 # ==========================================
-# 📊 NUMBER FORMAT
+# NOT ALLOWED
 # ==========================================
 
-def format_number(number):
-    return "{:,}".format(number)
+def not_allowed():
+    return "🚫 Not Allowed"
 
 
 # ==========================================
-# 📝 LOG FORMAT
+# DUPLICATE UID
 # ==========================================
 
-def make_log(action, admin_id, uid):
+def duplicate_uid():
+    return "⚠️ UID Already Exists"
 
+
+# ==========================================
+# PENDING MESSAGE
+# ==========================================
+
+def pending_message(uid):
     return (
-        f"[{current_datetime()}] "
-        f"{action} | "
-        f"Admin: {admin_id} | "
+        f"📥 Request Submitted\n\n"
+        f"UID: {uid}\n"
+        f"Status: Pending Approval"
+    )
+
+
+# ==========================================
+# APPROVED MESSAGE
+# ==========================================
+
+def approved_message(uid):
+    return (
+        f"✅ FF ID Approved\n\n"
         f"UID: {uid}"
     )
 
 
 # ==========================================
-# 📤 EXPORT TXT
+# REJECTED MESSAGE
 # ==========================================
 
-def export_txt(data, filename="ff_ids.txt"):
-
-    with open(
-        filename,
-        "w",
-        encoding="utf-8"
-    ) as file:
-
-        for row in data:
-            file.write(str(row) + "\n")
-
-    return filename
-
-
-# ==========================================
-# 📤 EXPORT CSV
-# ==========================================
-
-def export_csv(data, filename="ff_ids.csv"):
-
-    with open(
-        filename,
-        "w",
-        newline="",
-        encoding="utf-8"
-    ) as file:
-
-        writer = csv.writer(file)
-
-        for row in data:
-            writer.writerow(row)
-
-    return filename
-
-
-# ==========================================
-# 🎮 FF ID FORMAT
-# ==========================================
-
-def ff_details(uid, nickname, category):
-
+def rejected_message(uid):
     return (
-        f"🎮 FF ID Details\n\n"
-        f"🆔 UID: {uid}\n"
-        f"👤 Nickname: {nickname}\n"
-        f"🏆 Category: {category}"
+        f"❌ FF ID Rejected\n\n"
+        f"UID: {uid}"
     )
 
 
 # ==========================================
-# 📈 VIEW FORMAT
+# BROADCAST FORMAT
 # ==========================================
 
-def view_text(views):
-
-    return f"👀 Views: {views}"
-
-
-# ==========================================
-# ⭐ FAVORITE FORMAT
-# ==========================================
-
-def favorite_text():
-
-    return "⭐ Added To Favorites"
+def broadcast_message(text):
+    return (
+        "📢 Broadcast Message\n\n"
+        f"{text}"
+    )
 
 
 # ==========================================
-# 🚫 NOT ALLOWED
+# CATEGORY LIST
 # ==========================================
 
-def not_allowed():
-
-    return "❌ Not Allowed"
-
-
-# ==========================================
-# ✅ SUCCESS
-# ==========================================
-
-def success(text="Success"):
-
-    return f"✅ {text}"
-
-
-# ==========================================
-# ❌ ERROR
-# ==========================================
-
-def error(text="Error"):
-
-    return f"❌ {text}"
+CATEGORIES = [
+    "Bronze",
+    "Silver",
+    "Gold",
+    "Platinum",
+    "Diamond",
+    "Heroic",
+    "Grandmaster"
+    ]
