@@ -1,142 +1,233 @@
+# ==========================================
+# admin.py
+# FF ID Management Bot Admin System
+# ==========================================
+
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
 
-import database as db
 import config
+import database as db
 
 
-# =========================
-# 🔐 ADMIN CHECK
-# =========================
+# ==========================================
+# CHECK ADMIN
+# ==========================================
+
 def is_admin(user_id):
     return user_id in config.ADMIN_IDS
 
 
-# =========================
-# 📥 PENDING REQUEST LIST
-# =========================
-@Client.on_message(filters.command("pending") & filters.private)
-def pending_requests(client, message):
+# ==========================================
+# ADMIN PANEL
+# ==========================================
+
+@Client.on_message(filters.command("admin"))
+async def admin_panel(client, message: Message):
+
     if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
-
-    requests = db.get_pending_requests()
-
-    if not requests:
-        return message.reply("📭 No pending requests")
-
-    for req in requests:
-        uid = req["uid"]
-        ffid = req["ff_id"]
-
-        buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("✅ Approve", callback_data=f"approve:{uid}"),
-                InlineKeyboardButton("❌ Reject", callback_data=f"reject:{uid}")
-            ]
-        ])
-
-        message.reply(
-            f"📥 Pending FF ID Request\n\n"
-            f"👤 UID: {uid}\n"
-            f"🎮 FF ID: {ffid}",
-            reply_markup=buttons
+        return await message.reply_text(
+            "❌ You Are Not Admin"
         )
 
-
-# =========================
-# ✅ APPROVE REQUEST
-# =========================
-@Client.on_callback_query(filters.regex(r"approve:(.+)"))
-def approve_request(client, callback_query):
-    if not is_admin(callback_query.from_user.id):
-        return callback_query.answer("Not allowed", show_alert=True)
-
-    uid = callback_query.data.split(":")[1]
-
-    data = db.approve_request(uid)
-
-    # user notify
-    client.send_message(
-        uid,
-        "🎉 আপনার FF ID Approve করা হয়েছে!"
+    await message.reply_text(
+        "👑 Admin Panel\n\n"
+        "/pending - Pending Requests\n"
+        "/stats - Bot Statistics\n"
+        "/logs - View Logs\n"
+        "/broadcast - Broadcast Message"
     )
 
-    callback_query.message.edit_text("✅ Approved Successfully")
 
+# ==========================================
+# ADMIN ADD ID
+# /adminadd UID NAME CATEGORY
+# ==========================================
 
-# =========================
-# ❌ REJECT REQUEST
-# =========================
-@Client.on_callback_query(filters.regex(r"reject:(.+)"))
-def reject_request(client, callback_query):
-    if not is_admin(callback_query.from_user.id):
-        return callback_query.answer("Not allowed", show_alert=True)
+@Client.on_message(filters.command("adminadd"))
+async def admin_add(client, message):
 
-    uid = callback_query.data.split(":")[1]
-
-    db.reject_request(uid)
-
-    # user notify
-    client.send_message(
-        uid,
-        "❌ দুঃখিত, আপনার FF ID Reject করা হয়েছে!"
-    )
-
-    callback_query.message.edit_text("❌ Rejected")
-
-
-# =========================
-# 🗑 DELETE FF ID
-# =========================
-@Client.on_callback_query(filters.regex(r"delete:(.+)"))
-def delete_ffid(client, callback_query):
-    if not is_admin(callback_query.from_user.id):
-        return callback_query.answer("Not Allowed", show_alert=True)
-
-    ff_id = callback_query.data.split(":")[1]
-
-    db.delete_ff_id(ff_id)
-
-    callback_query.message.edit_text("🗑 Deleted Successfully")
-
-
-# =========================
-# 📢 BROADCAST MESSAGE
-# =========================
-@Client.on_message(filters.command("broadcast") & filters.private)
-def broadcast(client, message):
     if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
+        return
 
-    text = message.text.replace("/broadcast", "").strip()
+    if len(message.command) < 4:
+        return await message.reply_text(
+            "Usage:\n/adminadd UID NAME CATEGORY"
+        )
+
+    uid = message.command[1]
+    nickname = message.command[2]
+    category = message.command[3]
+
+    if db.uid_exists(uid):
+        return await message.reply_text(
+            "❌ UID Already Exists"
+        )
+
+    db.add_ff_id(
+        message.from_user.id,
+        uid,
+        nickname,
+        category
+    )
+
+    db.add_log(
+        "ADMIN_ADD",
+        message.from_user.id,
+        uid
+    )
+
+    await message.reply_text(
+        f"✅ FF ID Added\n\nUID: {uid}"
+    )
+
+
+# ==========================================
+# DELETE FF ID
+# /delete UID
+# ==========================================
+
+@Client.on_message(filters.command("delete"))
+async def delete_id(client, message):
+
+    if not is_admin(message.from_user.id):
+        return await message.reply_text(
+            "🚫 Not Allowed"
+        )
+
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "Usage:\n/delete UID"
+        )
+
+    uid = message.command[1]
+
+    data = db.get_ff_by_uid(uid)
+
+    if not data:
+        return await message.reply_text(
+            "❌ UID Not Found"
+        )
+
+    db.delete_ff_id(uid)
+
+    db.add_log(
+        "DELETE",
+        message.from_user.id,
+        uid
+    )
+
+    await message.reply_text(
+        f"🗑 Deleted UID: {uid}"
+    )
+
+
+# ==========================================
+# EDIT FF ID
+# /edit UID NEW_NAME
+# ==========================================
+
+@Client.on_message(filters.command("edit"))
+async def edit_id(client, message):
+
+    if not is_admin(message.from_user.id):
+        return await message.reply_text(
+            "🚫 Not Allowed"
+        )
+
+    if len(message.command) < 3:
+        return await message.reply_text(
+            "Usage:\n/edit UID NEW_NAME"
+        )
+
+    uid = message.command[1]
+    new_name = " ".join(
+        message.command[2:]
+    )
+
+    db.edit_ff_id(
+        uid,
+        new_name
+    )
+
+    db.add_log(
+        "EDIT",
+        message.from_user.id,
+        uid
+    )
+
+    await message.reply_text(
+        f"✏️ Updated\n\nUID: {uid}\nNew Name: {new_name}"
+    )
+
+
+# ==========================================
+# BROADCAST
+# ==========================================
+
+@Client.on_message(filters.command("broadcast"))
+async def broadcast(client, message):
+
+    if not is_admin(message.from_user.id):
+        return
+
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "Usage:\n/broadcast MESSAGE"
+        )
+
+    text = message.text.split(
+        " ", 1
+    )[1]
 
     users = db.get_all_users()
 
-    count = 0
+    sent = 0
+
     for user in users:
         try:
-            client.send_message(user, f"📢 Broadcast:\n\n{text}")
-            count += 1
+            await client.send_message(
+                user[0],
+                f"📢 Broadcast\n\n{text}"
+            )
+            sent += 1
         except:
             pass
 
-    message.reply(f"✅ Broadcast sent to {count} users")
+    await message.reply_text(
+        f"✅ Sent To {sent} Users"
+    )
 
 
-# =========================
-# 📊 STATS
-# =========================
-@Client.on_message(filters.command("stats") & filters.private)
-def stats(client, message):
+# ==========================================
+# EXPORT TXT
+# ==========================================
+
+@Client.on_message(filters.command("exporttxt"))
+async def export_txt(client, message):
+
     if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
+        return
 
-    total_users = db.total_users()
-    total_ids = db.total_ff_ids()
+    data = db.get_all_ff_ids()
 
-    message.reply(
-        f"📊 Bot Stats\n\n"
-        f"👥 Users: {total_users}\n"
-        f"🎮 FF IDs: {total_ids}"
-  )
+    text = ""
+
+    for row in data:
+
+        text += (
+            f"UID: {row[2]}\n"
+            f"NAME: {row[3]}\n"
+            f"CATEGORY: {row[4]}\n\n"
+        )
+
+    with open(
+        "ff_ids.txt",
+        "w",
+        encoding="utf-8"
+    ) as f:
+        f.write(text)
+
+    await message.reply_document(
+        "ff_ids.txt"
+    )
