@@ -424,6 +424,23 @@ def get_favorites():
 
     conn.close()
     return data
+    # ==========================================
+# CATEGORY FILTER
+# ==========================================
+
+def get_by_category(category):
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM ff_ids WHERE category=?",
+        (category,)
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
 # ==========================================
 # LOG SYSTEM
 # ==========================================
