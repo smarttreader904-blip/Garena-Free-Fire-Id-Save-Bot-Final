@@ -4,17 +4,14 @@
 # ==========================================
 
 from pyrogram import Client, filters
-from pyrogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton
-)
+from pyrogram.types import Message
 
-import database as db
 import config
+import database as db
 
 
 # ==========================================
-# 👑 ADMIN CHECK
+# CHECK ADMIN
 # ==========================================
 
 def is_admin(user_id):
@@ -22,115 +19,104 @@ def is_admin(user_id):
 
 
 # ==========================================
-# 📥 SHOW PENDING REQUESTS
+# SHOW PENDING LIST
 # ==========================================
 
 @Client.on_message(filters.command("pending"))
-def pending_list(client, message):
+async def pending_list(client, message: Message):
 
     if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
+        return await message.reply_text(
+            "🚫 Not Allowed"
+        )
 
     requests = db.get_pending_requests()
 
     if not requests:
-        return message.reply("📭 No Pending Requests")
+        return await message.reply_text(
+            "✅ No Pending Requests"
+        )
+
+    text = "📥 Pending Requests\n\n"
 
     for req in requests:
 
-        uid = req["uid"]
-        user_id = req["user_id"]
-        nickname = req["nickname"]
-        category = req["category"]
-
-        buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "✅ Approve",
-                    callback_data=f"approve:{uid}"
-                ),
-                InlineKeyboardButton(
-                    "❌ Reject",
-                    callback_data=f"reject:{uid}"
-                )
-            ]
-        ])
-
-        message.reply(
-            f"📥 Pending Request\n\n"
-            f"🆔 UID: {uid}\n"
-            f"🎮 Name: {nickname}\n"
-            f"🏆 Category: {category}\n"
-            f"👤 User ID: {user_id}",
-            reply_markup=buttons
+        text += (
+            f"🆔 UID: {req['uid']}\n"
+            f"👤 Name: {req['nickname']}\n"
+            f"🏆 Category: {req['category']}\n"
+            f"👤 User ID: {req['user_id']}\n\n"
         )
+
+    await message.reply_text(text)
 
 
 # ==========================================
-# ✅ APPROVE REQUEST
+# APPROVE REQUEST
+# /approve UID
 # ==========================================
 
-@Client.on_callback_query(
-    filters.regex(r"^approve:")
-)
-def approve_request(client, callback_query):
+@Client.on_message(filters.command("approve"))
+async def approve_uid(client, message):
 
-    if not is_admin(callback_query.from_user.id):
-        return callback_query.answer(
-            "❌ Not Allowed",
-            show_alert=True
+    if not is_admin(message.from_user.id):
+        return await message.reply_text(
+            "🚫 Not Allowed"
         )
 
-    uid = callback_query.data.split(":")[1]
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "Usage:\n/approve UID"
+        )
+
+    uid = message.command[1]
 
     data = db.approve_request(uid)
 
     if not data:
-        return callback_query.answer(
-            "Request not found",
-            show_alert=True
+        return await message.reply_text(
+            "❌ Pending UID Not Found"
         )
 
-    user_id = data[1]
-
-    # Add Log
     db.add_log(
-        "approve",
-        callback_query.from_user.id,
+        "APPROVE",
+        message.from_user.id,
         uid
     )
 
-    # Notify User
+    # User Notification
     try:
-        client.send_message(
-            user_id,
-            f"🎉 Congratulations!\n\n"
-            f"Your FF ID ({uid}) has been approved."
+        await client.send_message(
+            data[1],
+            f"✅ Your FF ID Approved\n\nUID: {uid}"
         )
     except:
         pass
 
-    callback_query.message.edit_text(
-        f"✅ Approved\n\nUID: {uid}"
+    await message.reply_text(
+        f"✅ Approved UID: {uid}"
     )
 
 
 # ==========================================
-# ❌ REJECT REQUEST
+# REJECT REQUEST
+# /reject UID
 # ==========================================
 
-@Client.on_callback_query(
-    filters.regex(r"^reject:")
-)
-def reject_request(client, callback_query):
+@Client.on_message(filters.command("reject"))
+async def reject_uid(client, message):
 
-    if not is_admin(callback_query.from_user.id):
-        return callback_query.answer(
-            "❌ Not Allowed",
-            show_alert=True
+    if not is_admin(message.from_user.id):
+        return await message.reply_text(
+            "🚫 Not Allowed"
         )
 
-    uid = callback_query.data.split(":")[1]
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "Usage:\n/reject UID"
+        )
+
+    uid = message.command[1]
 
     requests = db.get_pending_requests()
 
@@ -144,109 +130,58 @@ def reject_request(client, callback_query):
     db.reject_request(uid)
 
     db.add_log(
-        "reject",
-        callback_query.from_user.id,
+        "REJECT",
+        message.from_user.id,
         uid
     )
 
-    # Notify User
+    # User Notification
     if target_user:
         try:
-            client.send_message(
+            await client.send_message(
                 target_user,
-                f"❌ Sorry!\n\n"
-                f"Your FF ID ({uid}) was rejected."
+                f"❌ Your FF ID Rejected\n\nUID: {uid}"
             )
         except:
             pass
 
-    callback_query.message.edit_text(
-        f"❌ Rejected\n\nUID: {uid}"
+    await message.reply_text(
+        f"❌ Rejected UID: {uid}"
     )
 
 
 # ==========================================
-# 📊 PENDING COUNT
-# ==========================================
-
-@Client.on_message(filters.command("pendingcount"))
-def pending_count(client, message):
-
-    if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
-
-    requests = db.get_pending_requests()
-
-    message.reply(
-        f"📥 Total Pending Requests: {len(requests)}"
-    )
-
-
-# ==========================================
-# 🗑 CLEAR ALL PENDING
+# CLEAR ALL PENDING
+# /clearpending
 # ==========================================
 
 @Client.on_message(filters.command("clearpending"))
-def clear_pending(client, message):
+async def clear_pending_cmd(client, message):
 
     if not is_admin(message.from_user.id):
-        return message.reply("❌ Not Allowed")
+        return
 
-    buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "🗑 Confirm",
-                callback_data="confirm_clear_pending"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "❌ Cancel",
-                callback_data="cancel_clear_pending"
-            )
-        ]
-    ])
+    db.clear_pending()
 
-    message.reply(
-        "⚠️ Clear all pending requests?",
-        reply_markup=buttons
+    await message.reply_text(
+        "🗑 All Pending Requests Cleared"
     )
 
 
 # ==========================================
-# ✅ CONFIRM CLEAR
+# PENDING COUNT
 # ==========================================
 
-@Client.on_callback_query(
-    filters.regex("^confirm_clear_pending$")
-)
-def confirm_clear_pending(client, callback_query):
+@Client.on_message(filters.command("pendingcount"))
+async def pending_count(client, message):
 
-    if not is_admin(callback_query.from_user.id):
-        return callback_query.answer(
-            "❌ Not Allowed",
-            show_alert=True
+    if not is_admin(message.from_user.id):
+        return
+
+    count = len(
+        db.get_pending_requests()
+    )
+
+    await message.reply_text(
+        f"📥 Total Pending: {count}"
         )
-
-    try:
-        db.clear_pending()
-    except:
-        pass
-
-    callback_query.message.edit_text(
-        "✅ All pending requests cleared."
-    )
-
-
-# ==========================================
-# ❌ CANCEL CLEAR
-# ==========================================
-
-@Client.on_callback_query(
-    filters.regex("^cancel_clear_pending$")
-)
-def cancel_clear_pending(client, callback_query):
-
-    callback_query.message.edit_text(
-        "❌ Cancelled."
-      )
