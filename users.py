@@ -1,13 +1,13 @@
 # ==========================================
 # users.py
-# FF ID Management Bot User System
+# FF ID Management Bot Users System
 # ==========================================
 
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
 
 import database as db
-import config
+import keyboards
 
 
 # ==========================================
@@ -15,136 +15,46 @@ import config
 # ==========================================
 
 @Client.on_message(filters.command("start"))
-def start(client, message):
+async def start_cmd(client, message: Message):
+
+    user = message.from_user
 
     db.add_user(
-        message.from_user.id,
-        message.from_user.first_name
+        user.id,
+        user.first_name
     )
 
-    buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "➕ Add FF ID",
-                callback_data="add_ff"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "📋 Show IDs",
-                callback_data="show_ids"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "🔍 Search UID",
-                callback_data="search_uid"
-            )
-        ]
-    ])
-
-    message.reply(
+    await message.reply_text(
         "🎮 Welcome To FF ID Management Bot",
-        reply_markup=buttons
+        reply_markup=keyboards.home_menu()
     )
 
 
 # ==========================================
-# SHOW IDS
+# TOTAL IDS
 # ==========================================
 
-@Client.on_callback_query(
-    filters.regex("^show_ids$")
-)
-def show_ids(client, callback_query):
+@Client.on_message(filters.command("totalids"))
+async def total_ids(client, message):
 
-    ids = db.get_all_ff_ids()
+    total = db.total_ff_ids()
 
-    if not ids:
-        return callback_query.message.reply(
-            "📭 No FF IDs Found"
-        )
-
-    for item in ids:
-
-        uid = item[2]
-
-        buttons = InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    f"🎮 {uid}",
-                    callback_data=f"view:{uid}"
-                )
-            ]
-        ])
-
-        callback_query.message.reply(
-            f"🆔 UID: {uid}",
-            reply_markup=buttons
-        )
-
-
-# ==========================================
-# VIEW DETAILS
-# ==========================================
-
-@Client.on_callback_query(
-    filters.regex(r"^view:")
-)
-def view_details(client, callback_query):
-
-    uid = callback_query.data.split(":")[1]
-
-    data = db.get_ff_by_uid(uid)
-
-    if not data:
-        return callback_query.answer(
-            "UID Not Found",
-            show_alert=True
-        )
-
-    db.increase_view(uid)
-
-    text = (
-        f"🎮 FF ID Details\n\n"
-        f"🆔 UID: {data[2]}\n"
-        f"👤 Nickname: {data[3]}\n"
-        f"🏆 Category: {data[4]}\n"
-        f"📊 Status: {data[5]}\n"
-        f"👀 Views: {data[6]}\n"
-        f"📅 Saved: {data[8]}"
-    )
-
-    buttons = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                "⭐ Favorite",
-                callback_data=f"favorite:{uid}"
-            )
-        ]
-    ])
-
-    callback_query.message.reply(
-        text,
-        reply_markup=buttons
+    await message.reply_text(
+        f"📊 Total Saved IDs: {total}"
     )
 
 
 # ==========================================
-# ADD FAVORITE
+# TOTAL USERS
 # ==========================================
 
-@Client.on_callback_query(
-    filters.regex(r"^favorite:")
-)
-def add_favorite(client, callback_query):
+@Client.on_message(filters.command("totalusers"))
+async def total_users(client, message):
 
-    uid = callback_query.data.split(":")[1]
+    total = db.total_users()
 
-    db.add_favorite(uid)
-
-    callback_query.answer(
-        "⭐ Added To Favorites"
+    await message.reply_text(
+        f"👥 Total Users: {total}"
     )
 
 
@@ -153,136 +63,119 @@ def add_favorite(client, callback_query):
 # ==========================================
 
 @Client.on_message(filters.command("search"))
-def search_uid(client, message):
+async def search_uid(client, message):
 
-    args = message.text.split()
-
-    if len(args) < 2:
-        return message.reply(
+    if len(message.command) < 2:
+        return await message.reply_text(
             "Usage:\n/search UID"
         )
 
-    uid = args[1]
+    uid = message.command[1]
 
     data = db.get_ff_by_uid(uid)
 
     if not data:
-        return message.reply(
+        return await message.reply_text(
             "❌ UID Not Found"
         )
 
     db.increase_view(uid)
 
-    message.reply(
-        f"🎮 Result Found\n\n"
-        f"🆔 UID: {data[2]}\n"
-        f"👤 Nickname: {data[3]}\n"
-        f"🏆 Category: {data[4]}"
+    text = f"""
+🎮 FF ID Details
+
+🆔 UID: {data[2]}
+👤 Nickname: {data[3]}
+🏆 Category: {data[4]}
+👁 Views: {data[6]}
+⭐ Favorite: {data[7]}
+📅 Saved: {data[8]}
+"""
+
+    await message.reply_text(
+        text
     )
 
 
 # ==========================================
-# ADD FF ID
+# SEARCH NAME
 # ==========================================
 
-@Client.on_message(filters.command("add"))
-def add_ff(client, message):
+@Client.on_message(filters.command("searchname"))
+async def search_name(client, message):
 
-    args = message.text.split(maxsplit=3)
-
-    if len(args) < 4:
-        return message.reply(
-            "Usage:\n/add UID NAME CATEGORY"
+    if len(message.command) < 2:
+        return await message.reply_text(
+            "Usage:\n/searchname NAME"
         )
 
-    uid = args[1]
-    nickname = args[2]
-    category = args[3]
-
-    if not config.ALLOW_DUPLICATE_UID:
-        if db.uid_exists(uid):
-            return message.reply(
-                "❌ UID Already Exists"
-            )
-
-    db.add_pending(
-        message.from_user.id,
-        uid,
-        nickname,
-        category
+    name = " ".join(
+        message.command[1:]
     )
 
-    for admin in config.ADMIN_IDS:
-        try:
-            client.send_message(
-                admin,
-                f"📥 New FF ID Request\n\n"
-                f"UID: {uid}\n"
-                f"Name: {nickname}\n"
-                f"Category: {category}"
-            )
-        except:
-            pass
+    results = db.search_nickname(name)
 
-    message.reply(
-        "✅ Submitted For Approval"
-    )
-
-
-# ==========================================
-# MY IDS
-# ==========================================
-
-@Client.on_message(filters.command("myids"))
-def my_ids(client, message):
-
-    ids = db.get_all_ff_ids()
-
-    found = False
-
-    for item in ids:
-
-        if item[1] == message.from_user.id:
-
-            found = True
-
-            message.reply(
-                f"🆔 {item[2]}\n"
-                f"👤 {item[3]}"
-            )
-
-    if not found:
-        message.reply(
-            "📭 No FF IDs Found"
+    if not results:
+        return await message.reply_text(
+            "❌ No Result Found"
         )
 
+    text = "🔍 Results\n\n"
+
+    for row in results:
+
+        text += (
+            f"🆔 {row[2]}\n"
+            f"👤 {row[3]}\n"
+            f"🏆 {row[4]}\n\n"
+        )
+
+    await message.reply_text(text)
+
 
 # ==========================================
-# HOME BUTTON
+# SHOW IDS
 # ==========================================
 
-@Client.on_callback_query(
-    filters.regex("^home$")
+@Client.on_message(filters.command("showids"))
+async def show_ids(client, message):
+
+    data = db.get_all_ff_ids()
+
+    if not data:
+        return await message.reply_text(
+            "❌ No IDs Saved"
+        )
+
+    text = "📋 Saved FF IDs\n\n"
+
+    for row in data:
+
+        text += (
+            f"🆔 {row[2]}\n"
+            f"👤 {row[3]}\n"
+            f"🏆 {row[4]}\n\n"
+        )
+
+    await message.reply_text(text)
+
+
+# ==========================================
+# MOST VIEWED
+# ==========================================
+
+@Client.on_message(filters.command("top"))
+async def top_viewed(client, message):
+
+    data = db.most_viewed()
+
+    if not data:
+        return await message.reply_text(
+            "❌ No Data"
+        )
+
+    await message.reply_text(
+        f"🏆 Most Viewed UID\n\n"
+        f"🆔 {data[0]}\n"
+        f"👁 Views: {data[1]}"
 )
-def home(client, callback_query):
-
-    callback_query.message.reply(
-        "🏠 Home Menu\n\n"
-        "/add\n"
-        "/search\n"
-        "/myids"
-    )
-
-
-# ==========================================
-# REFRESH
-# ==========================================
-
-@Client.on_callback_query(
-    filters.regex("^refresh$")
-)
-def refresh(client, callback_query):
-
-    callback_query.answer(
-        "♻️ Refreshed"
-  )
