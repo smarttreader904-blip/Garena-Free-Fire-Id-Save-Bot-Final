@@ -382,7 +382,6 @@ def most_viewed():
     conn.close()
     return data if data else None
 
-
 # ==========================================
 # FAVORITES
 # ==========================================
@@ -413,6 +412,18 @@ def remove_favorite(uid):
     conn.close()
 
 
+def get_favorites():
+    conn = connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM ff_ids WHERE favorite=1"
+    )
+
+    data = cur.fetchall()
+
+    conn.close()
+    return data
 # ==========================================
 # LOG SYSTEM
 # ==========================================
